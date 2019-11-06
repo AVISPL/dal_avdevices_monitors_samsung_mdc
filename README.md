@@ -1,0 +1,1 @@
+# dal_avdevices_monitors_samsung_mdc
