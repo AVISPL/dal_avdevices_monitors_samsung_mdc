@@ -1,18 +1,22 @@
 package com.avispl.symphony.dal.communicator.samsung.mdc;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 public class SamsungMDCUtils {
 
-    private final static char HEADER = 0xAA;
+    private final static byte HEADER = (byte)0xAA;
 
     //Calculate an xor checksum of a byte[], return a byte
     static byte checkSum(byte bytes[]){
-        byte checkSum = 0;
+        int checksum = 0;
 
-        for( byte s : bytes){
-            checkSum = (byte) (checkSum + s);
+        for(int i = 0;i < bytes.length;i++){
+            checksum = checksum + bytes[i]& 0xFF;
         }
 
-        return checkSum;
+        return (byte) checksum;
     }
 
     //print a String in HEX format
@@ -32,23 +36,79 @@ public class SamsungMDCUtils {
         return sBld.toString();
     }
 
-    static String buildSendString(char monitorID, char command){
+    protected static final char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+
+    public static String getHexByteString(byte[] bytes) throws IOException {
+        return getHexByteString((CharSequence)null, ",", (CharSequence)null, bytes);
+    }
+
+    public static String getHexByteString(CharSequence prefix, CharSequence separator, CharSequence suffix, byte[] bytes) throws IOException {
+        byte[] data = bytes;
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 0; i < data.length; ++i) {
+            if (i > 0) {
+                sb.append(separator);
+            }
+
+            int v = data[i] & 255;
+            if (prefix != null) {
+                sb.append(prefix);
+            }
+
+            sb.append(hexArray[v >> 4]);
+            sb.append(hexArray[v & 15]);
+            if (suffix != null) {
+                sb.append(suffix);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    static byte[] buildSendString(byte monitorID, byte command){
         return buildSendString(monitorID,command,null);
     }
 
-    static String buildSendString(char monitorID, char command, String param) {
+    static byte[] buildSendString(byte monitorID, byte command, byte[] param) {
+        List<Byte> bytes = new ArrayList<>();
 
-        //build message first as it's size is required in header
-        String message = null;
+        bytes.add(command);
+        bytes.add((byte)monitorID);
 
         if(param != null) {
-            message = Character.toString(command) + Character.toString(monitorID) + (char)param.length() + param;
+
+            bytes.add((byte)param.length);
+
+            for(byte b:param){
+                bytes.add(b);
+            }
         }else{
-            message = Character.toString(command) + Character.toString(monitorID) + (char) 0x00;
+            bytes.add((byte)0x00);
         }
 
-        message += (char) checkSum(message.getBytes());
+        byte message[] = new byte[bytes.size()];
 
-        return HEADER + message ;
+        for(int i = 0;i<bytes.size();i++)
+        {
+            message[i] = bytes.get(i);
+        }
+
+        bytes.add(checkSum(message));
+
+        bytes.add(0,HEADER);
+
+        bytes.add((byte)0x0D);
+        bytes.add((byte)0x0A);
+
+        byte byteArray[] = new byte[bytes.size()];
+
+        for(int i = 0;i<bytes.size();i++)
+        {
+            byteArray[i] = bytes.get(i);
+        }
+
+        return byteArray ;
     }
 }
