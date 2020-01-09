@@ -37,20 +37,26 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
 
     @Override
     public void controlProperty(ControllableProperty controllableProperty) throws Exception {
+
         if (controllableProperty.getProperty().equals(commandNames.POWER.name())){
-            if(controllableProperty.getValue().toString().equals(powerStatusNames.ON.name())){
+            if(controllableProperty.getValue().toString().equals("1")){
                 powerON();
-            }else if(controllableProperty.getValue().toString().equals(powerStatusNames.OFF.name())){
+            }else if(controllableProperty.getValue().toString().equals("0")){
                 powerOFF();
             }
-        }else if (controllableProperty.getProperty().equals(commandNames.INPUT.name())){
-            setInput(inputNames.valueOf(controllableProperty.getValue().toString()));
         }
     }
 
     @Override
-    public void controlProperties(List<ControllableProperty> list) throws Exception {
-
+    public void controlProperties(List<ControllableProperty> controllableProperties) throws Exception {
+        // same as controlProperty(ControllableProperty controllableProperty), but for a multiples of ControllableProperty
+        controllableProperties.stream().forEach(p -> {
+            try {
+                controlProperty(p);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
@@ -58,14 +64,21 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         ExtendedStatistics extendedStatistics = new ExtendedStatistics();
 
         Map<String, String> controllable = new HashMap<String, String>(){{
-            put(commandNames.POWER.name(),powerStatus.keySet().toString());
-            put(commandNames.INPUT.name(),inputs.keySet().toString());
+            put(commandNames.POWER.name(),"Toggle");
         }};
 
         Map<String, String> statistics = new HashMap<String, String>();
 
+        String power;
+
         try {
-            statistics.put(commandNames.POWER.name(), getPower().name());
+            power = getPower().name();
+            if(power.compareTo("ON") == 0) {
+                statistics.put(commandNames.POWER.name(), "1");
+            }else if(power.compareTo("OFF") == 0)
+            {
+                statistics.put(commandNames.POWER.name(), "0");
+            }
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during getPower", e);
@@ -73,9 +86,11 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             throw e;
         }
 
-        SamsungMDCStatus status = getStatus();
+
 
         try {
+            SamsungMDCStatus status = getStatus();
+
             statistics.put(statusNames.LAMP.name(), status.getLamp().name());
             statistics.put(statusNames.TEMPERATURE_CODE.name(), status.getTemperatureError().name());
             statistics.put(statusNames.BRIGHTNESS_SENSOR.name(), status.getBrightnessSensor().name());
@@ -89,8 +104,11 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             throw e;
         }
 
+        String input;
+
         try {
-            statistics.put(commandNames.INPUT.name(), getInput().name());
+            input =  getInput().name();
+            statistics.put(commandNames.INPUT.name(), input);
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during getInput", e);
@@ -101,7 +119,20 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         extendedStatistics.setControl(controllable);
         extendedStatistics.setStatistics(statistics);
 
-        return Collections.singletonList(extendedStatistics);
+        if(this.logger.isDebugEnabled()) {
+            for (String s : controllable.keySet()) {
+                this.logger.debug("controllable key: " + s + ",value: " + controllable.get(s));
+            }
+        }
+
+        if(this.logger.isDebugEnabled()) {
+            for (String s : statistics.keySet()) {
+                this.logger.debug("statistics key: " + s + ",value: " + statistics.get(s));
+            }
+        }
+
+        //return Collections.singletonList(extendedStatistics);
+        return new ArrayList<Statistics>(Collections.singleton(extendedStatistics));
     }
 
     private powerStatusNames getPower() throws Exception{
@@ -119,11 +150,6 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
     }
 
     private void powerON() throws IOException {
-        this.logger.info("powerON");
-
-        byte[] param = new byte[]{powerStatus.get(powerStatusNames.ON)};
-
-        this.logger.info("param: "+getHexByteString(param));
 
         byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER),new byte[]{powerStatus.get(powerStatusNames.ON)});
 
@@ -131,6 +157,13 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             byte[] response = send(toSend);
 
             digestResponse(response,commandNames.POWER);
+
+
+            destroyChannel();
+            synchronized(this) {//synchronized block
+                Thread.sleep(20000);
+            }
+            //wait(10000);
         } catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during power ON send", e);
@@ -139,11 +172,6 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
     }
 
     private void powerOFF() throws IOException {
-        this.logger.info("powerOFF");
-
-        byte[] param = new byte[]{powerStatus.get(powerStatusNames.OFF)};
-
-        this.logger.info("param: "+getHexByteString(param));
 
         byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER),new byte[]{powerStatus.get(powerStatusNames.OFF)});
 
@@ -158,17 +186,17 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
-    private inputNames getInput()throws  Exception{
-        byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.INPUT)));
+    private inputNames getInput()throws  Exception {
+            byte[] response = send(SamsungMDCUtils.buildSendString((byte) monitorID, commands.get(commandNames.INPUT)));
 
-        inputNames input = (inputNames)digestResponse(response,commandNames.INPUT);
+            inputNames input = (inputNames) digestResponse(response, commandNames.INPUT);
 
-        if(input == null)
-        {
-            throw new Exception();
-        }else{
-            return input;
-        }
+            if(input == null)
+            {
+                throw new Exception();
+            }else{
+                return input;
+            }
     }
 
     private void setInput(inputNames i){

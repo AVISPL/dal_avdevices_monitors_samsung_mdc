@@ -5,10 +5,10 @@ import com.avispl.symphony.api.dal.error.CommandFailureException;
 import com.avispl.symphony.dal.BaseDevice;
 import com.avispl.symphony.dal.communicator.Communicator;
 import com.avispl.symphony.dal.communicator.ConnectionStatus;
-import com.google.common.io.ByteStreams;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -137,12 +137,10 @@ public class SocketCommunicator extends BaseDevice implements Communicator {
     }
 
     private void createChannel() throws Exception {
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("DEBUG - NEC Multisync Communicator creating channel");
-        }
         try {
             if (this.socket == null || this.socket.isClosed() || !this.socket.isConnected()) {
                 this.socket = new Socket(this.host, this.port);
+                this.socket.setSoTimeout(5000);
             }
 
         }catch (UnknownHostException ex) {
@@ -156,8 +154,7 @@ public class SocketCommunicator extends BaseDevice implements Communicator {
         }
     }
 
-    private void destroyChannel() {
-        this.logger.debug("DEBUG - NEC Multisync Communicator destroying channel");
+    public void destroyChannel() {
         if (null != this.socket) {
             try {
                 if (this.socket.isConnected()) {
@@ -242,7 +239,15 @@ public class SocketCommunicator extends BaseDevice implements Communicator {
                 this.status.setLastError(null);
             }
 
+            if(this.logger.isDebugEnabled()) {
+                this.logger.debug("Sending: " + getHexByteString(data) + " to: " + this.host + " port: " + this.port);
+            }
+
             byte response[] = this.internalSend(data);
+
+            if(this.logger.isDebugEnabled()) {
+                this.logger.debug("Received response: " + getHexByteString(response) + " from: " + this.host + " port: " + this.port);
+            }
 
             if (this.logger.isTraceEnabled()) {
                 this.logger.trace("Received response: " + response + " from: " + this.host + " port: " + this.port);
@@ -257,7 +262,21 @@ public class SocketCommunicator extends BaseDevice implements Communicator {
 
             this.status.setLastTimestamp(System.currentTimeMillis());
             throw var4;
-        } catch (Exception var5) {
+        }catch(SocketTimeoutException ex){
+            if (this.logger.isDebugEnabled()) {
+                this.logger.debug("Time out while sending command: " + data + " to: " + this.host + " port: " + this.port + " connection state: " + this.status.getConnectionState() + " error: ", ex);
+            }
+
+            //throw ex;
+            this.status.setLastError(ex);
+            this.status.setConnectionState(ConnectionState.Unknown);
+            this.destroyChannel();
+            if (retryOnError) {
+                return this.send(data, true);
+            } else {
+                throw ex;
+            }
+        } catch(Exception var5) {
             if (var5 instanceof InterruptedException) {
                 if (this.logger.isDebugEnabled()) {
                     this.logger.debug("Interrupted while sending command: " + data + " to: " + this.host + " port: " + this.port + " connection state: " + this.status.getConnectionState() + " error: ", var5);
@@ -283,7 +302,6 @@ public class SocketCommunicator extends BaseDevice implements Communicator {
     }
 
     private void write(byte[] outputData) throws Exception {
-
         OutputStream os = this.socket.getOutputStream();
 
         os.write(outputData);
@@ -292,7 +310,7 @@ public class SocketCommunicator extends BaseDevice implements Communicator {
 
     private byte[] read(byte[] command, InputStream in) throws Exception {
         if (this.logger.isDebugEnabled()) {
-            this.logger.debug("DEBUG - NEC Multisync Communicator reading after command text \"" + command + "\" was sent to host " + this.host);
+            this.logger.debug("DEBUG - Socket Communicator reading after command text \"" + command + "\" was sent to host " + this.host);
         }
 
         BufferedInputStream reader = new BufferedInputStream(in);
