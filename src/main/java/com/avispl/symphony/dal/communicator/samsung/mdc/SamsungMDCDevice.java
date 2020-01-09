@@ -15,6 +15,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
 
     private int monitorID;
 
+    /**
+     * Constructor set the TCP/IP port to be used as well the default monitor ID
+     */
     public SamsungMDCDevice(){
         super();
 
@@ -35,6 +38,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         this.monitorID = monitorID;
     }
 
+    /**
+     * This method is recalled by Symphony to control specific property
+     * @param controllableProperty This is the property to be controled
+     */
     @Override
     public void controlProperty(ControllableProperty controllableProperty) throws Exception {
 
@@ -47,6 +54,11 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
+    /**
+     * This method is recalled by Symphony to control a list of properties
+     * @param controllableProperties This is the list of properties to be controlled
+     * @return byte This returns the calculated xor checksum.
+     */
     @Override
     public void controlProperties(List<ControllableProperty> controllableProperties) throws Exception {
         // same as controlProperty(ControllableProperty controllableProperty), but for a multiples of ControllableProperty
@@ -59,6 +71,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         });
     }
 
+    /**
+     * This method is recalled by Symphony to get the list of statistics to be displayed
+     * @return List<Statistics> This return the list of statistics.
+     */
     @Override
     public List<Statistics> getMultipleStatistics() throws Exception {
         ExtendedStatistics extendedStatistics = new ExtendedStatistics();
@@ -135,10 +151,15 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         return new ArrayList<Statistics>(Collections.singleton(extendedStatistics));
     }
 
+    /**
+     * This method is used to get the current display power status
+     * @return powerStatusNames This returns the calculated xor checksum.
+     */
     private powerStatusNames getPower() throws Exception{
-
+        //sending the get power command
         byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER)));
 
+        //digest the result
         powerStatusNames power= (powerStatusNames)digestResponse(response,commandNames.POWER);
 
         if(power == null)
@@ -149,6 +170,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
+    /**
+     * This method is used to send the power ON command to the display
+     */
     private void powerON() throws IOException {
 
         byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER),new byte[]{powerStatus.get(powerStatusNames.ON)});
@@ -156,9 +180,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         try {
             byte[] response = send(toSend);
 
+            //digesting the response but voiding the result
             digestResponse(response,commandNames.POWER);
 
-
+            //disconnect from the device and wait for 20 seconds as the device is unresponsive during this time
             destroyChannel();
             synchronized(this) {//synchronized block
                 Thread.sleep(20000);
@@ -171,6 +196,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
+    /**
+     * This method is used to send the power OFF command to the display
+     */
     private void powerOFF() throws IOException {
 
         byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER),new byte[]{powerStatus.get(powerStatusNames.OFF)});
@@ -186,6 +214,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
+    /**
+     * This method is used to get the current display input
+     * @return inputNames This returns the current input.
+     */
     private inputNames getInput()throws  Exception {
             byte[] response = send(SamsungMDCUtils.buildSendString((byte) monitorID, commands.get(commandNames.INPUT)));
 
@@ -199,6 +231,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             }
     }
 
+    /**
+     * This method is is used to change the display input (future pupose (Symphony doesn't currently support enums)
+     * @param i This is the input to change to
+     */
     private void setInput(inputNames i){
         byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.INPUT),new byte[]{inputs.get(i)});
 
@@ -213,6 +249,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
+    /**
+     * This method is used to get the status results from the display
+     * @return SamsungMDCStatus This returns the retrieved status results.
+     */
     private SamsungMDCStatus getStatus() throws  Exception{
         byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.STATUS)));
 
@@ -226,9 +266,16 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         }
     }
 
+    /**
+     * This method is used to digest the response received from the device
+     * @param responseBytes This is the response to be digested
+     * @param expectedResponse This is the expected response type to be compared with received
+     * @return Object This returns the result digested from the response.
+     */
     private Object digestResponse(byte[] responseBytes, commandNames expectedResponse){
         Set set = null;
 
+        //checksum verification
         byte checksumByte = SamsungMDCUtils.checkSum(java.util.Arrays.copyOfRange(responseBytes,1,responseBytes.length-1));
 
         if(checksumByte == responseBytes[responseBytes.length-1]){
@@ -249,6 +296,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                                     }
                                 }
                             }else{
+                                if (this.logger.isErrorEnabled()) {
+                                    this.logger.error("error: Unexpected response: " + this.host + " port: " + this.getPort());
+                                }
                                 throw new RuntimeException("Unexpected response");
                             }
                             break;
@@ -265,6 +315,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                                     }
                                 }
                             }else{
+                                if (this.logger.isErrorEnabled()) {
+                                    this.logger.error("error: Unexpected response: " + this.host + " port: " + this.getPort());
+                                }
                                 throw new RuntimeException("Unexpected response");
                             }
                             break;
@@ -276,6 +329,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                                         statusCodes.get(responseBytes[9]),
                                         statusCodes.get(responseBytes[11]),responseBytes[10]);
                             }else{
+                                if (this.logger.isErrorEnabled()) {
+                                    this.logger.error("error: Unexpected response: " + this.host + " port: " + this.getPort());
+                                }
                                 throw new RuntimeException("Unexpected response");
                             }
                         }
@@ -286,6 +342,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                 {
                     switch (expectedResponse){
                         case POWER:{
+                            if (this.logger.isErrorEnabled()) {
+                                this.logger.error("error: Power command returned NAK: " + this.host + " port: " + this.getPort());
+                            }
                             throw new RuntimeException("Power command returned NAK");
                         }case INPUT:{
                             if(responseBytes[5] == commands.get(commandNames.INPUT)){
@@ -300,6 +359,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                                     }
                                 }
                             }else{
+                                if (this.logger.isErrorEnabled()) {
+                                    this.logger.error("error: Unexpected response: " + this.host + " port: " + this.getPort());
+                                }
                                 throw new RuntimeException("Unexpected response");
                             }
                             break;
@@ -308,11 +370,20 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                     break;
                 } default:
                 {
+                    if (this.logger.isErrorEnabled()) {
+                        this.logger.error("error: Nor ACK or NAK received: " + this.host + " port: " + this.getPort());
+                    }
                     throw new RuntimeException("Nor ACK or NAK received");
                 }
             }
-        }else{
+        }else{//Wrong checksum
+            if (this.logger.isErrorEnabled()) {
+                this.logger.error("error: wrong checksum communicating with: " + this.host + " port: " + this.getPort());
+            }
             throw new RuntimeException("wrong Checksum received");
+        }
+        if (this.logger.isErrorEnabled()) {
+            this.logger.error("error: End of digestResponse reached without a solution: " + this.host + " port: " + this.getPort());
         }
         throw new RuntimeException("End of digestResponse reached without a solution");
     }

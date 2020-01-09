@@ -5,20 +5,26 @@ import java.util.Map;
 
 class SamsungMDCConstants {
 
+    //Power status values
     enum powerStatusNames {ON,OFF}
+    //Power HEX codes map
     final static Map<powerStatusNames,Byte> powerStatus = new HashMap<powerStatusNames,Byte>(){{
         put(powerStatusNames.ON, (byte)0x01);
         put(powerStatusNames.OFF, (byte)0x00);
     }};
 
+    //Device commands
     enum commandNames{POWER,INPUT,STATUS}
+    //Commands HEX values map
     final static Map<commandNames, Byte> commands = new HashMap<commandNames,Byte>(){{
         put(commandNames.POWER, (byte)0x11);
         put(commandNames.INPUT, (byte)0x14);
         put(commandNames.STATUS, (byte)0x0D);
     }};
 
+    //Input values
     enum inputNames {OFF,HDMI_1,HDMI_2,PC,DVI,DVI_VIDEO,COMPONENT,RF,DTV,DISPLAYPORT,MAGIC_INFO}
+    //Inputs HEX values map
     final static Map<inputNames, Byte> inputs = new HashMap<inputNames, Byte>() {{
         put(inputNames.OFF, (byte)0x01);
         put(inputNames.HDMI_1, (byte)0x21);
@@ -33,7 +39,9 @@ class SamsungMDCConstants {
         put(inputNames.MAGIC_INFO, (byte)0x20);
     }};
 
+    //status codes values
     enum statusCodeNames{NORMAL,ERROR,UNKNOWN}
+    //status codes HEX balues map
     final static Map<Byte,statusCodeNames> statusCodes = new HashMap<Byte,statusCodeNames>(){{
        put((byte)0x00,statusCodeNames.NORMAL);
        put((byte)0x01,statusCodeNames.ERROR);

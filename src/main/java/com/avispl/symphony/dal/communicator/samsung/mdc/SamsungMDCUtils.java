@@ -8,7 +8,11 @@ public class SamsungMDCUtils {
 
     private final static byte HEADER = (byte)0xAA;
 
-    //Calculate an xor checksum of a byte[], return a byte
+    /**
+     * This method is used to calculate the checksum of a byte array
+     * @param bytes This is the list of bytes against which the checksum should be calculated
+     * @return byte This returns the calculated checksum.
+     */
     static byte checkSum(byte bytes[]){
         int checksum = 0;
 
@@ -19,7 +23,11 @@ public class SamsungMDCUtils {
         return (byte) checksum;
     }
 
-    //print a String in HEX format
+    /**
+     * This method is used to convert a String in HEX format (for printing purposes)
+     * @param str This is the String to be converted in Hex format
+     * @return String This returns the converted String
+     */
     protected static String getHexString(String str){
         StringBuilder sBld = new StringBuilder();
 
@@ -67,10 +75,20 @@ public class SamsungMDCUtils {
         return sb.toString();
     }
 
+    /**
+     * This method is used to build a string to be sent according to the NEC Protocol (See bellow)
+     */
     static byte[] buildSendString(byte monitorID, byte command){
         return buildSendString(monitorID,command,null);
     }
 
+    /**
+     * This method is used to build a string to be sent according to the Samsung Protocol
+     * @param monitorID This is byte representing the monitor ID
+     * @param command This is the byte array reprensenting the command to be sent
+     * @param param This is the byte array reprensenting the parameter values to be sent
+     * @return byte[] This returns the string to be sent to the display
+     */
     static byte[] buildSendString(byte monitorID, byte command, byte[] param) {
         List<Byte> bytes = new ArrayList<>();
 
