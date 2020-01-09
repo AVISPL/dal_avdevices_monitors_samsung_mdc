@@ -14,12 +14,12 @@ class SamsungMDCConstants {
     }};
 
     //Device commands
-    enum commandNames{POWER,INPUT,STATUS}
+    enum commandNames{power,input,status}
     //Commands HEX values map
     final static Map<commandNames, Byte> commands = new HashMap<commandNames,Byte>(){{
-        put(commandNames.POWER, (byte)0x11);
-        put(commandNames.INPUT, (byte)0x14);
-        put(commandNames.STATUS, (byte)0x0D);
+        put(commandNames.power, (byte)0x11);
+        put(commandNames.input, (byte)0x14);
+        put(commandNames.status, (byte)0x0D);
     }};
 
     //Input values
@@ -48,5 +48,5 @@ class SamsungMDCConstants {
         put((byte)0x02,statusCodeNames.UNKNOWN);
     }};
 
-    enum statusNames{LAMP,TEMPERATURE_CODE,BRIGHTNESS_SENSOR,NO_SYNC,TEMPERATURE,FAN}
+    enum statusNames{lamp,temperature_code,brightness_sensor,sync,temperature,fan}
 }

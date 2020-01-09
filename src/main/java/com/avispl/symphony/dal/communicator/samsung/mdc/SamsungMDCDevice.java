@@ -45,7 +45,7 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
     @Override
     public void controlProperty(ControllableProperty controllableProperty) throws Exception {
 
-        if (controllableProperty.getProperty().equals(commandNames.POWER.name())){
+        if (controllableProperty.getProperty().equals(commandNames.power.name())){
             if(controllableProperty.getValue().toString().equals("1")){
                 powerON();
             }else if(controllableProperty.getValue().toString().equals("0")){
@@ -80,7 +80,7 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         ExtendedStatistics extendedStatistics = new ExtendedStatistics();
 
         Map<String, String> controllable = new HashMap<String, String>(){{
-            put(commandNames.POWER.name(),"Toggle");
+            put(commandNames.power.name(),"Toggle");
         }};
 
         Map<String, String> statistics = new HashMap<String, String>();
@@ -90,10 +90,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         try {
             power = getPower().name();
             if(power.compareTo("ON") == 0) {
-                statistics.put(commandNames.POWER.name(), "1");
+                statistics.put(commandNames.power.name(), "1");
             }else if(power.compareTo("OFF") == 0)
             {
-                statistics.put(commandNames.POWER.name(), "0");
+                statistics.put(commandNames.power.name(), "0");
             }
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
@@ -107,12 +107,12 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         try {
             SamsungMDCStatus status = getStatus();
 
-            statistics.put(statusNames.LAMP.name(), status.getLamp().name());
-            statistics.put(statusNames.TEMPERATURE_CODE.name(), status.getTemperatureError().name());
-            statistics.put(statusNames.BRIGHTNESS_SENSOR.name(), status.getBrightnessSensor().name());
-            statistics.put(statusNames.NO_SYNC.name(), status.getNoSync().name());
-            statistics.put(statusNames.FAN.name(), status.getFan().name());
-            statistics.put(statusNames.TEMPERATURE.name(), Integer.toString(status.getTemperature()));
+            statistics.put(statusNames.lamp.name(), status.getLamp().name());
+            statistics.put(statusNames.temperature_code.name(), status.getTemperatureError().name());
+            statistics.put(statusNames.brightness_sensor.name(), status.getBrightnessSensor().name());
+            statistics.put(statusNames.sync.name(), status.getNoSync().name());
+            statistics.put(statusNames.fan.name(), status.getFan().name());
+            statistics.put(statusNames.temperature.name(), Integer.toString(status.getTemperature()));
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during getStatus", e);
@@ -124,7 +124,7 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
 
         try {
             input =  getInput().name();
-            statistics.put(commandNames.INPUT.name(), input);
+            statistics.put(commandNames.input.name(), input);
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during getInput", e);
@@ -157,10 +157,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      */
     private powerStatusNames getPower() throws Exception{
         //sending the get power command
-        byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER)));
+        byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.power)));
 
         //digest the result
-        powerStatusNames power= (powerStatusNames)digestResponse(response,commandNames.POWER);
+        powerStatusNames power= (powerStatusNames)digestResponse(response,commandNames.power);
 
         if(power == null)
         {
@@ -175,13 +175,13 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      */
     private void powerON() throws IOException {
 
-        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER),new byte[]{powerStatus.get(powerStatusNames.ON)});
+        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.power),new byte[]{powerStatus.get(powerStatusNames.ON)});
 
         try {
             byte[] response = send(toSend);
 
             //digesting the response but voiding the result
-            digestResponse(response,commandNames.POWER);
+            digestResponse(response,commandNames.power);
 
             //disconnect from the device and wait for 20 seconds as the device is unresponsive during this time
             destroyChannel();
@@ -201,12 +201,12 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      */
     private void powerOFF() throws IOException {
 
-        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.POWER),new byte[]{powerStatus.get(powerStatusNames.OFF)});
+        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.power),new byte[]{powerStatus.get(powerStatusNames.OFF)});
 
         try {
             byte[] response = send(toSend);
 
-            digestResponse(response,commandNames.POWER);
+            digestResponse(response,commandNames.power);
         } catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during power OFF send", e);
@@ -219,9 +219,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      * @return inputNames This returns the current input.
      */
     private inputNames getInput()throws  Exception {
-            byte[] response = send(SamsungMDCUtils.buildSendString((byte) monitorID, commands.get(commandNames.INPUT)));
+            byte[] response = send(SamsungMDCUtils.buildSendString((byte) monitorID, commands.get(commandNames.input)));
 
-            inputNames input = (inputNames) digestResponse(response, commandNames.INPUT);
+            inputNames input = (inputNames) digestResponse(response, commandNames.input);
 
             if(input == null)
             {
@@ -236,12 +236,12 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      * @param i This is the input to change to
      */
     private void setInput(inputNames i){
-        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.INPUT),new byte[]{inputs.get(i)});
+        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.input),new byte[]{inputs.get(i)});
 
         try {
             byte[] response = send(toSend);
 
-            digestResponse(response,commandNames.INPUT);
+            digestResponse(response,commandNames.input);
         } catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during setInput send", e);
@@ -254,9 +254,9 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      * @return SamsungMDCStatus This returns the retrieved status results.
      */
     private SamsungMDCStatus getStatus() throws  Exception{
-        byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.STATUS)));
+        byte[] response = send(SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.status)));
 
-        SamsungMDCStatus status = (SamsungMDCStatus)digestResponse(response,commandNames.STATUS);
+        SamsungMDCStatus status = (SamsungMDCStatus)digestResponse(response,commandNames.status);
 
         if(status == null)
         {
@@ -283,8 +283,8 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                 case 'A':
                 {
                     switch (expectedResponse){
-                        case POWER:{
-                            if(responseBytes[5] == commands.get(commandNames.POWER)){
+                        case power:{
+                            if(responseBytes[5] == commands.get(commandNames.power)){
                                 set = powerStatus.entrySet();
 
                                 Iterator iterator = set.iterator();
@@ -302,8 +302,8 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                                 throw new RuntimeException("Unexpected response");
                             }
                             break;
-                        }case INPUT:{
-                            if(responseBytes[5] == commands.get(commandNames.INPUT)){
+                        }case input:{
+                            if(responseBytes[5] == commands.get(commandNames.input)){
                                 set = inputs.entrySet();
 
                                 Iterator iterator = set.iterator();
@@ -321,8 +321,8 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                                 throw new RuntimeException("Unexpected response");
                             }
                             break;
-                        }case STATUS:{
-                            if(responseBytes[5] == commands.get(commandNames.STATUS)){
+                        }case status:{
+                            if(responseBytes[5] == commands.get(commandNames.status)){
                                 return new SamsungMDCStatus(statusCodes.get(responseBytes[6]),
                                         statusCodes.get(responseBytes[7]),
                                         statusCodes.get(responseBytes[8]),
@@ -341,13 +341,13 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
                 case 'N':
                 {
                     switch (expectedResponse){
-                        case POWER:{
+                        case power:{
                             if (this.logger.isErrorEnabled()) {
                                 this.logger.error("error: Power command returned NAK: " + this.host + " port: " + this.getPort());
                             }
                             throw new RuntimeException("Power command returned NAK");
-                        }case INPUT:{
-                            if(responseBytes[5] == commands.get(commandNames.INPUT)){
+                        }case input:{
+                            if(responseBytes[5] == commands.get(commandNames.input)){
                                 set = inputs.entrySet();
 
                                 Iterator iterator = set.iterator();
