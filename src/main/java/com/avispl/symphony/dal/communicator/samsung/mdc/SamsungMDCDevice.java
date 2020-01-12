@@ -109,8 +109,15 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
 
             statistics.put(statusNames.lamp.name(), status.getLamp().name());
             statistics.put(statusNames.temperature_code.name(), status.getTemperatureError().name());
-            statistics.put(statusNames.brightness_sensor.name(), status.getBrightnessSensor().name());
-            statistics.put(statusNames.sync.name(), status.getNoSync().name());
+            //statistics.put(statusNames.brightness_sensor.name(), status.getBrightnessSensor().name());
+            if(status.getNoSync().name() == "ERROR")
+            {
+                statistics.put(statusNames.sync.name(), "NO SYNC");
+            }else if(status.getNoSync().name() == "NORMAL")
+            {
+                statistics.put(statusNames.sync.name(), "DETECTED");
+            }
+
             statistics.put(statusNames.fan.name(), status.getFan().name());
             statistics.put(statusNames.temperature.name(), Integer.toString(status.getTemperature()));
         }catch (Exception e) {
