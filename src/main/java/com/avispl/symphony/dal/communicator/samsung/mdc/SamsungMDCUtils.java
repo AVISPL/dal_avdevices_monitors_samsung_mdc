@@ -72,6 +72,7 @@ public class SamsungMDCUtils {
             }
         }
 
+
         return sb.toString();
     }
 
