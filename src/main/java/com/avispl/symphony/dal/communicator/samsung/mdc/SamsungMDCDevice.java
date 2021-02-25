@@ -5,6 +5,7 @@ import com.avispl.symphony.api.dal.dto.control.ControllableProperty;
 import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
 import com.avispl.symphony.api.dal.dto.monitor.Statistics;
 import com.avispl.symphony.api.dal.monitor.Monitorable;
+import com.avispl.symphony.dal.communicator.SocketCommunicator;
 
 import java.io.IOException;
 import java.util.*;
@@ -108,7 +109,7 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             SamsungMDCStatus status = getStatus();
 
             statistics.put(statusNames.lamp.name(), status.getLamp().name());
-            statistics.put(statusNames.temperature_code.name(), status.getTemperatureError().name());
+            statistics.put(statusNames.temperature_code.name().replaceAll("_", " "), status.getTemperatureError().name());
             //statistics.put(statusNames.brightness_sensor.name(), status.getBrightnessSensor().name());
             if(status.getNoSync().name() == "ERROR")
             {
