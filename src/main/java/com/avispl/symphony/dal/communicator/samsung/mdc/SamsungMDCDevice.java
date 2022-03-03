@@ -240,24 +240,6 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
     }
 
     /**
-     * This method is is used to change the display input (future pupose (Symphony doesn't currently support enums)
-     * @param i This is the input to change to
-     */
-    private void setInput(inputNames i){
-        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.input),new byte[]{inputs.get(i)});
-
-        try {
-            byte[] response = send(toSend);
-
-            digestResponse(response,commandNames.input);
-        } catch (Exception e) {
-            if (this.logger.isDebugEnabled()) {
-                this.logger.debug("error during setInput send", e);
-            }
-        }
-    }
-
-    /**
      * This method is used to get the status results from the display
      * @return SamsungMDCStatus This returns the retrieved status results.
      */
