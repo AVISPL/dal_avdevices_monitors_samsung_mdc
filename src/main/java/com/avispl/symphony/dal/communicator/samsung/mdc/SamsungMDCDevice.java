@@ -6,6 +6,7 @@ import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
 import com.avispl.symphony.api.dal.dto.monitor.Statistics;
 import com.avispl.symphony.api.dal.monitor.Monitorable;
 import com.avispl.symphony.dal.communicator.SocketCommunicator;
+import com.avispl.symphony.dal.util.StringUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,6 +16,7 @@ import static com.avispl.symphony.dal.communicator.samsung.mdc.SamsungMDCConstan
 public class SamsungMDCDevice extends SocketCommunicator implements Controller, Monitorable {
 
     private int monitorID;
+    private String historicalProperties;
 
     /**
      * Constructor set the TCP/IP port to be used as well the default monitor ID
@@ -29,6 +31,24 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         this.setCommandSuccessList(Collections.singletonList("A"));
         // set list of error response strings (included at the end of response when command fails, typically ending with command prompt)
         this.setCommandErrorList(Collections.singletonList("ERROR"));
+    }
+
+    /**
+     * Retrieves {@link #historicalProperties}
+     *
+     * @return value of {@link #historicalProperties}
+     */
+    public String getHistoricalProperties() {
+        return historicalProperties;
+    }
+
+    /**
+     * Sets {@link #historicalProperties} value
+     *
+     * @param historicalProperties new value of {@link #historicalProperties}
+     */
+    public void setHistoricalProperties(String historicalProperties) {
+        this.historicalProperties = historicalProperties;
     }
 
     public int getMonitorID() {
@@ -84,7 +104,8 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             put(commandNames.power.name(),"Toggle");
         }};
 
-        Map<String, String> statistics = new HashMap<String, String>();
+        Map<String, String> statistics = new HashMap<>();
+        Map<String, String> dynamicStatistics = new HashMap<>();
 
         String power;
 
@@ -120,7 +141,14 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             }
 
             statistics.put(statusNames.fan.name(), status.getFan().name());
-            statistics.put(statusNames.temperature.name(), Integer.toString(status.getTemperature()));
+
+            String temperatureParameter = statusNames.temperature.name();
+            String temperatureValue = Integer.toString(status.getTemperature());
+            if (StringUtils.isNotNullOrEmpty(historicalProperties) && historicalProperties.contains(temperatureParameter)) {
+                dynamicStatistics.put(temperatureParameter, temperatureValue);
+            } else {
+                statistics.put(temperatureParameter, temperatureValue);
+            }
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during getStatus", e);
