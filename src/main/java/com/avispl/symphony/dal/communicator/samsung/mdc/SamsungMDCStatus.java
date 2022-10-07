@@ -1,6 +1,9 @@
+/*
+ * Copyright (c) 2022 AVI-SPL, Inc. All Rights Reserved.
+ */
 package com.avispl.symphony.dal.communicator.samsung.mdc;
 
-import static com.avispl.symphony.dal.communicator.samsung.mdc.SamsungMDCConstants.*;
+import static com.avispl.symphony.dal.communicator.samsung.mdc.SamsungMDCConstants.statusCodeNames;
 
 public class SamsungMDCStatus {
     private statusCodeNames lamp;

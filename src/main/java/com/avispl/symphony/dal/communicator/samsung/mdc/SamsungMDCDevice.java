@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2022 AVI-SPL, Inc. All Rights Reserved.
+ */
 package com.avispl.symphony.dal.communicator.samsung.mdc;
 
 import com.avispl.symphony.api.dal.control.Controller;
@@ -15,6 +18,7 @@ import static com.avispl.symphony.dal.communicator.samsung.mdc.SamsungMDCConstan
 public class SamsungMDCDevice extends SocketCommunicator implements Controller, Monitorable {
 
     private int monitorID;
+    private Set<String> historicalProperties = new HashSet<>();
 
     /**
      * Constructor set the TCP/IP port to be used as well the default monitor ID
@@ -29,6 +33,27 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
         this.setCommandSuccessList(Collections.singletonList("A"));
         // set list of error response strings (included at the end of response when command fails, typically ending with command prompt)
         this.setCommandErrorList(Collections.singletonList("ERROR"));
+    }
+
+    /**
+     * Retrieves {@link #historicalProperties}
+     *
+     * @return value of {@link #historicalProperties}
+     */
+    public String getHistoricalProperties() {
+        return String.join(",", this.historicalProperties);
+    }
+
+    /**
+     * Sets {@link #historicalProperties} value
+     *
+     * @param historicalProperties new value of {@link #historicalProperties}
+     */
+    public void setHistoricalProperties(String historicalProperties) {
+        this.historicalProperties.clear();
+        Arrays.asList(historicalProperties.split(",")).forEach(propertyName -> {
+            this.historicalProperties.add(propertyName.trim());
+        });
     }
 
     public int getMonitorID() {
@@ -84,7 +109,8 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             put(commandNames.power.name(),"Toggle");
         }};
 
-        Map<String, String> statistics = new HashMap<String, String>();
+        Map<String, String> statistics = new HashMap<>();
+        Map<String, String> dynamicStatistics = new HashMap<>();
 
         String power;
 
@@ -120,7 +146,14 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             }
 
             statistics.put(statusNames.fan.name(), status.getFan().name());
-            statistics.put(statusNames.temperature.name(), Integer.toString(status.getTemperature()));
+
+            String temperatureParameter = statusNames.temperature.name();
+            String temperatureValue = Integer.toString(status.getTemperature());
+            if (!historicalProperties.isEmpty() && historicalProperties.contains(temperatureParameter)) {
+                dynamicStatistics.put(temperatureParameter, temperatureValue);
+            } else {
+                statistics.put(temperatureParameter, temperatureValue);
+            }
         }catch (Exception e) {
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug("error during getStatus", e);
@@ -237,24 +270,6 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
             }else{
                 return input;
             }
-    }
-
-    /**
-     * This method is is used to change the display input (future pupose (Symphony doesn't currently support enums)
-     * @param i This is the input to change to
-     */
-    private void setInput(inputNames i){
-        byte[] toSend = SamsungMDCUtils.buildSendString((byte)monitorID,commands.get(commandNames.input),new byte[]{inputs.get(i)});
-
-        try {
-            byte[] response = send(toSend);
-
-            digestResponse(response,commandNames.input);
-        } catch (Exception e) {
-            if (this.logger.isDebugEnabled()) {
-                this.logger.debug("error during setInput send", e);
-            }
-        }
     }
 
     /**
