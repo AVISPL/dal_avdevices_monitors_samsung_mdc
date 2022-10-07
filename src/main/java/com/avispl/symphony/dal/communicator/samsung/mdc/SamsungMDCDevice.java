@@ -9,7 +9,6 @@ import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
 import com.avispl.symphony.api.dal.dto.monitor.Statistics;
 import com.avispl.symphony.api.dal.monitor.Monitorable;
 import com.avispl.symphony.dal.communicator.SocketCommunicator;
-import com.avispl.symphony.dal.util.StringUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -19,7 +18,7 @@ import static com.avispl.symphony.dal.communicator.samsung.mdc.SamsungMDCConstan
 public class SamsungMDCDevice extends SocketCommunicator implements Controller, Monitorable {
 
     private int monitorID;
-    private String historicalProperties;
+    private Set<String> historicalProperties = new HashSet<>();
 
     /**
      * Constructor set the TCP/IP port to be used as well the default monitor ID
@@ -42,7 +41,7 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      * @return value of {@link #historicalProperties}
      */
     public String getHistoricalProperties() {
-        return historicalProperties;
+        return String.join(",", this.historicalProperties);
     }
 
     /**
@@ -51,7 +50,10 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
      * @param historicalProperties new value of {@link #historicalProperties}
      */
     public void setHistoricalProperties(String historicalProperties) {
-        this.historicalProperties = historicalProperties;
+        this.historicalProperties.clear();
+        Arrays.asList(historicalProperties.split(",")).forEach(propertyName -> {
+            this.historicalProperties.add(propertyName.trim());
+        });
     }
 
     public int getMonitorID() {
@@ -147,7 +149,7 @@ public class SamsungMDCDevice extends SocketCommunicator implements Controller, 
 
             String temperatureParameter = statusNames.temperature.name();
             String temperatureValue = Integer.toString(status.getTemperature());
-            if (StringUtils.isNotNullOrEmpty(historicalProperties) && historicalProperties.contains(temperatureParameter)) {
+            if (!historicalProperties.isEmpty() && historicalProperties.contains(temperatureParameter)) {
                 dynamicStatistics.put(temperatureParameter, temperatureValue);
             } else {
                 statistics.put(temperatureParameter, temperatureValue);
